@@ -9,7 +9,9 @@ import express from 'express';
 import morgan from 'morgan';
 import { got } from 'got';
 import dotenv from 'dotenv';
-import cors from 'cors';
+import got from 'got';
+import { postRouter } from './routers/postsRouter.js';
+import { ListCollectionsCursor, MongoClient } from 'mongodb';
 dotenv.config();
 
 const app = express();
@@ -32,17 +34,19 @@ app.get('/api/weather', async (req, res) => {
     };
     const response = await got(BASE_URL, options).json();
 
-    const { temp, city_name, weather: {description} } = response.data[0];
-    res.end(
-      `В городе ${city_name} погода ${description} и температура ${temp} градусов`,
-    );
-  } catch (err) {
-    res.json({ err: err.message });
-  }
-});
-app.listen(PORT, err => {
-  if (err) {
-    console.log(`Ошибка!!! ${err}`);
-  }
-  console.log(`Сервер запущен на порте: ${PORT}`);
-});
+const start = async () => {
+  const client = new MongoClient(process.env.MONGO_URL)
+  await client.connect()
+  const db = client.db('MyNewDataBase');
+  const collection = db.collection('posts');
+  const posts = await collection.find({}).toArray()
+  console.log(posts);
+  app.listen(PORT, err => {
+    if (err) {
+      console.log(`Ошибка!!! ${err}`);
+    }
+    console.log(`Сервер запущен на порте: ${PORT}`);
+  });
+}
+
+start()
